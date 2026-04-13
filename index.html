@@ -100,9 +100,24 @@
     .end-btn { margin-top: 40px; padding: 15px 40px; background: #fff; color: #000; border: none; font-size: 20px; font-weight: bold; cursor: pointer; }
 
     .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
+#sessionTimer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #888;
+        z-index: 3000;
+        font-family: 'Fredoka', sans-serif;
+        background: rgba(0,0,0,0.5);
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
 </style>
 </head>
 <body onload="loadSavedData()">
+
+<div id="sessionTimer">Session: 00:00</div>
 
     <div id="hubMenu">
         <div class="title-text">Endless Math</div>
@@ -178,10 +193,22 @@
     </div>
 
 <script>
+let totalSeconds = 0;
+let sessionInterval;
 let mode = 'add', deck = [], priority = [];
 let currentQ, currentA, startTime, fastest = Infinity, score = 0, qCount = 0;
 let isTransitioning = false, isHintShowing = false;
 let lastAskedQuestions = []; 
+function startSessionTimer() {
+    if (sessionInterval) return;
+    sessionInterval = setInterval(() => {
+        totalSeconds++;
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        document.getElementById('sessionTimer').innerText = 
+            `Session: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }, 1000);
+}
 
 // Chain Game variables
 let currentTotal = 0, turnNumber = 0, winLimit = 1000;
@@ -211,6 +238,7 @@ function saveGameData() {
 }
 
 function loadSavedData() {
+startSessionTimer(); //
     const saved = localStorage.getItem('endlessMath_Data');
     if (saved) {
         const data = JSON.parse(saved);
@@ -349,6 +377,7 @@ function nextQ() {
     input.value = ''; input.disabled = false; input.focus();
     input.style.color = "white";
 
+    // --- CHAIN MODES ---
     if (mode === 'continue' || mode === 'subtract') {
         if (deck.length === 0) deck = generateChainDeck(parseInt(document.getElementById('rangePreset').value));
         
@@ -371,25 +400,42 @@ function nextQ() {
         return;
     }
 
+    // --- STANDARD MODES (Add, Sub, Table, Power) ---
     qCount++;
+
+    // 1. REFILL DECK: If deck is empty, re-initialize it to keep the game "Endless"
+    if (deck.length === 0) {
+        applySettings(); // This regenerates the deck based on current UI settings
+        return; 
+    }
+
     let pickedItem = null;
     let validPriority = priority.filter(p => !lastAskedQuestions.includes(p.q));
     
+    // 2. SMART SELECTION: Every 3rd question, try to show a "struggle" question
     if (validPriority.length > 0 && qCount % 3 === 0) {
         validPriority.sort((a,b) => b.t - a.t);
         pickedItem = validPriority[0];
-    } else if (deck.length > 0) {
+    } else {
+        // Find first item in deck that hasn't been asked recently
         let deckIdx = deck.findIndex(d => !lastAskedQuestions.includes(d.q));
+        
+        // If everything in the deck was just asked (rare), just take the first one
         if (deckIdx === -1) deckIdx = 0; 
+        
         pickedItem = deck.splice(deckIdx, 1)[0];
-    } else if (priority.length > 0) {
-        priority.sort((a,b) => b.t - a.t);
-        pickedItem = priority[0];
-    } else { endGame(); return; }
+    }
     
-    currentQ = pickedItem.q; currentA = pickedItem.a;
+    // Safety check if pickedItem is still null
+    if (!pickedItem) { endGame(); return; }
+    
+    currentQ = pickedItem.q; 
+    currentA = pickedItem.a;
+
+    // Track history to avoid immediate repeats
     lastAskedQuestions.push(currentQ);
-    if (lastAskedQuestions.length > 4) lastAskedQuestions.shift();
+    if (lastAskedQuestions.length > 5) lastAskedQuestions.shift();
+
     document.getElementById('qArea').innerHTML = currentQ;
     document.getElementById('qArea').style.color = "#ffffff";
     startTime = Date.now();
