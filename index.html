@@ -101,26 +101,28 @@
 
     .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
 #sessionTimer {
-    position: fixed; /* This "sticks" it to the screen */
-    top: 20px;       /* Distance from the top */
-    right: 20px;     /* Distance from the right */
+    position: fixed; 
+    top: 15px;       
+    right: 15px;     
     font-size: 16px;
     font-weight: 600;
-    color: #888;
-    z-index: 9999;   /* This ensures it stays ABOVE all other elements */
+    color: #ffffff;
+    z-index: 10000;  /* Higher than your stats overlay */
     font-family: 'Fredoka', sans-serif;
-    background: rgba(0,0,0,0.6); /* Slightly darker for better visibility */
-    padding: 8px 12px;
-    border-radius: 8px;
-    pointer-events: none; /* Allows you to click "through" it if it covers a button */
+    background: rgba(40, 40, 40, 0.7); /* Dark semi-transparent box */
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    pointer-events: none; /* Allows you to click things underneath it */
 }
 </style>
 </head>
+
 <body onload="loadSavedData()">
 
 <div id="sessionTimer">Session: 00:00</div>
 
-    <div id="hubMenu">
+<div id="hubMenu">
         <div class="title-text">Endless Math</div>
         <div class="credit-text">Designed by Pankaj Mehra</div>
         
@@ -226,25 +228,26 @@ const specialSub = [
 ];
 
 function saveGameData() {
+    const rangeVal = document.getElementById('rangePreset').value; // Get current dropdown value
     const gameData = {
         fastest: fastest,
-        priority: priority, // Saves slow questions permanently
+        priority: priority,
         minN: document.getElementById('minN').value,
         maxN: document.getElementById('maxN').value,
         sqMax: document.getElementById('sqMax').value,
         cbMax: document.getElementById('cbMax').value,
-        revToggle: document.getElementById('revToggle').checked
+        revToggle: document.getElementById('revToggle').checked,
+        rangePreset: rangeVal // Add this line to save the dropdown choice!
     };
     localStorage.setItem('endlessMath_Data', JSON.stringify(gameData));
 }
-
 function loadSavedData() {
-startSessionTimer(); //
+    startSessionTimer();
     const saved = localStorage.getItem('endlessMath_Data');
     if (saved) {
         const data = JSON.parse(saved);
         fastest = data.fastest || Infinity;
-        priority = data.priority || []; // Reloads slow questions
+        priority = data.priority || [];
         
         document.getElementById('minN').value = data.minN || 1;
         document.getElementById('maxN').value = data.maxN || 12;
@@ -263,7 +266,25 @@ function launch(newMode) {
     mode = newMode;
     document.getElementById('hubMenu').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
+    
+    // 1. Setup the basic UI options for the mode
     setupUI();
+    
+    // 2. Try to load the saved preference
+    const saved = localStorage.getItem('endlessMath_Data');
+    if (saved) {
+        const data = JSON.parse(saved);
+        if (data.rangePreset) {
+            const sel = document.getElementById('rangePreset');
+            // Check if the saved option is valid for the current mode's dropdown
+            const exists = Array.from(sel.options).some(opt => opt.value === data.rangePreset);
+            if (exists) {
+                sel.value = data.rangePreset;
+            }
+        }
+    }
+    
+    // 3. Apply settings once to ensure the deck matches the dropdown
     applySettings();
 }
 
