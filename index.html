@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title> Endless Maths </title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <style>
@@ -19,18 +19,19 @@
         margin: 0; padding: 0; height: 100%; width: 100%; 
         font-family: 'Fredoka', sans-serif; overflow: hidden; 
         background-color: #000000; color: #ffffff; 
+        user-select: none; -webkit-user-select: none;
     }
     
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
 
-    .title-text { font-family: 'Pusab', sans-serif; font-size: 32px; margin-bottom: 5px; color: #ffffff; text-transform: uppercase; text-align: center; }
+    .title-text { font-family: 'Pusab', sans-serif; font-size: 32px; margin-top: 40px; margin-bottom: 5px; color: #ffffff; text-transform: uppercase; text-align: center; }
     .credit-text { font-size: 14px; margin-bottom: 40px; color: #aaaaaa; text-align: center; font-weight: 500; letter-spacing: 1px;}
 
     #hubMenu { margin-top: auto; margin-bottom: auto; text-align: center; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
 
     .menu-btn {
         width: 100%; padding: 20px; background: #000; border: 2px solid #ffffff;
-        border-radius: 0; color: white; font-size: 20px; cursor: pointer; text-align: center; transition: 0.2s;
+        border-radius: 0; color: white; font-size: 18px; cursor: pointer; text-align: center; transition: 0.2s;
     }
     .menu-btn:hover { background: #ffffff; color: #000; }
 
@@ -40,8 +41,8 @@
     }
     
     #modeTag { 
-        font-size: 16px; margin-bottom: 40px; color: #ffffff; 
-        display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;
+        font-size: 16px; margin-bottom: 20px; color: #ffffff; 
+        display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;
     }
     
     #modeTag select, #modeTag input[type="number"] { 
@@ -65,6 +66,8 @@
 
     .game-box { width: 95%; max-width: 500px; text-align: center; }
 
+    .instruction-small { font-size: 16px; opacity: 0.7; min-height: 22px; margin-bottom: 5px; color: #fff; }
+
     .question { 
         font-size: clamp(60px, 20vw, 120px); font-weight: bold; 
         min-height: 150px; display: flex; align-items: center; justify-content: center; 
@@ -74,12 +77,12 @@
     .question sup { font-size: 0.5em; color: inherit; position: relative; top: -25px; }
     
     input#answer {
-        font-size: 50px; width: 200px; background: #000; border: none; border-bottom: 4px solid #ffffff;
-        color: #ffffff; text-align: center; outline: none; margin-bottom: 30px;
+        font-size: 50px; width: 220px; background: #000; border: none; border-bottom: 4px solid #ffffff;
+        color: #ffffff; text-align: center; outline: none; margin-bottom: 30px; border-radius: 0;
     }
 
-    .skip-btn { background: none; border: 1px solid #444; color: #444; padding: 10px 20px; cursor: pointer; font-family: 'Fredoka'; margin-bottom: 10px;}
-    .skip-btn:hover { border-color: #fff; color: #fff; }
+    .skip-btn, .hint-btn { background: none; border: 1px solid #444; color: #444; padding: 10px 20px; cursor: pointer; font-family: 'Fredoka'; margin-bottom: 10px; margin-inline: 5px;}
+    .skip-btn:hover, .hint-btn:hover { border-color: #fff; color: #fff; }
     
     .finish-game-btn { color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; background: none; border: none; }
 
@@ -95,6 +98,8 @@
     .stats-card { text-align: center; width: 85%; }
     .stat-row { display: flex; justify-content: space-between; margin: 20px 0; font-size: 24px; border-bottom: 1px solid #333; }
     .end-btn { margin-top: 40px; padding: 15px 40px; background: #fff; color: #000; border: none; font-size: 20px; font-weight: bold; cursor: pointer; }
+
+    .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
 </style>
 </head>
 <body onload="loadSavedData()">
@@ -107,6 +112,8 @@
         <button class="menu-btn" onclick="launch('sub')">SUBTRACTION</button>
         <button class="menu-btn" onclick="launch('table')">TABLES</button>
         <button class="menu-btn" onclick="launch('power')">POWERS</button>
+        <button class="menu-btn" onclick="launch('continue')">ADD & CONTINUE</button>
+        <button class="menu-btn" onclick="launch('subtract')">KEEP SUBTRACTING</button>
     </div>
 
     <div id="gameScreen">
@@ -114,7 +121,13 @@
 
         <div class="game-box" id="mainBox">
             <div id="modeTag">
-                <div id="rangeControl">RANGE: <select id="rangePreset" onchange="applySettings()"></select></div>
+                <div id="rangeControl" class="flex-row">RANGE: <select id="rangePreset" onchange="applySettings()"></select></div>
+                <div id="subStartControl" class="flex-row" style="display:none">START: <select id="subStartPreset" onchange="applySettings()">
+                    <option value="120">120</option>
+                    <option value="1200">1200</option>
+                    <option value="12000">12000</option>
+                    <option value="120000">120000</option>
+                </select></div>
                 <div id="customControl" style="display:none">
                     <input type="number" id="minN" value="1" onchange="applySettings()"> TO <input type="number" id="maxN" value="12" onchange="applySettings()">
                 </div>
@@ -131,18 +144,22 @@
                 </div>
             </div>
 
+            <div id="top-line" class="instruction-small"></div>
             <div class="question" id="qArea">--</div>
+            <div id="bottom-line" class="instruction-small"></div>
+
             <input type="tel" inputmode="numeric" id="answer" autofocus placeholder="?">
             <br>
-            <button class="skip-btn" onclick="skipQuestion()">SKIP (S)</button>
+            <button class="skip-btn" id="skipBtn" onclick="skipQuestion()">SKIP (S)</button>
+            <button class="hint-btn" id="hintBtn" style="display:none" onclick="triggerHint()">HINT</button>
             <br>
             <button class="finish-game-btn" onclick="endGame()">VIEW STATS</button>
 
-            <div class="hud">
+            <div class="hud" id="hudArea">
                 <div>SCORE: <span id="score">0</span></div>
                 <div>TIME: <span id="time">0.0</span>s</div>
             </div>
-            <div class="target-box">
+            <div class="target-box" id="targetArea">
                 <div>BEST: <span id="pb">--</span></div>
                 <div>GOAL: <span id="goal">--</span></div>
             </div>
@@ -151,9 +168,11 @@
 
     <div id="statsOverlay">
         <div class="stats-card">
-            <h1 style="font-size: 40px; margin-bottom: 50px;">SESSION OVER</h1>
-            <div class="stat-row"><span>SCORE</span> <span id="finalScore">0</span></div>
-            <div class="stat-row"><span>BEST</span> <span id="finalPB">0</span></div>
+            <h1 id="statTitle" style="font-size: 40px; margin-bottom: 50px;">SESSION OVER</h1>
+            <div id="normalStats">
+                <div class="stat-row"><span>SCORE</span> <span id="finalScore">0</span></div>
+                <div class="stat-row"><span>BEST</span> <span id="finalPB">0</span></div>
+            </div>
             <button class="end-btn" onclick="location.reload()">RESTART</button>
         </div>
     </div>
@@ -161,8 +180,11 @@
 <script>
 let mode = 'add', deck = [], priority = [];
 let currentQ, currentA, startTime, fastest = Infinity, score = 0, qCount = 0;
-let isTransitioning = false;
+let isTransitioning = false, isHintShowing = false;
 let lastAskedQuestions = []; 
+
+// Chain Game variables
+let currentTotal = 0, turnNumber = 0, winLimit = 1000;
 
 const specialSub = [
     {q: "0 - 1", a: 9}, {q: "0 - 2", a: 8}, {q: "0 - 3", a: 7}, {q: "0 - 4", a: 6}, {q: "0 - 5", a: 5}, {q: "0 - 6", a: 4}, {q: "0 - 7", a: 3}, {q: "0 - 8", a: 2}, {q: "0 - 9", a: 1},
@@ -175,10 +197,10 @@ const specialSub = [
     {q: "7 - 8", a: 9}, {q: "7 - 9", a: 8}, {q: "8 - 9", a: 7}
 ];
 
-// --- LOCAL STORAGE LOGIC ---
 function saveGameData() {
     const gameData = {
         fastest: fastest,
+        priority: priority, // Saves slow questions permanently
         minN: document.getElementById('minN').value,
         maxN: document.getElementById('maxN').value,
         sqMax: document.getElementById('sqMax').value,
@@ -193,6 +215,8 @@ function loadSavedData() {
     if (saved) {
         const data = JSON.parse(saved);
         fastest = data.fastest || Infinity;
+        priority = data.priority || []; // Reloads slow questions
+        
         document.getElementById('minN').value = data.minN || 1;
         document.getElementById('maxN').value = data.maxN || 12;
         document.getElementById('sqMax').value = data.sqMax || 30;
@@ -220,6 +244,13 @@ function setupUI() {
     const sel = document.getElementById('rangePreset');
     sel.innerHTML = '';
     document.getElementById('powerControl').style.display = 'none';
+    document.getElementById('subStartControl').style.display = (mode === 'subtract') ? 'flex' : 'none';
+    
+    const isChainMode = (mode === 'continue' || mode === 'subtract');
+    document.getElementById('skipBtn').style.display = isChainMode ? 'none' : 'inline-block';
+    document.getElementById('hintBtn').style.display = isChainMode ? 'inline-block' : 'none';
+    document.getElementById('hudArea').style.display = isChainMode ? 'none' : 'flex';
+    document.getElementById('targetArea').style.display = isChainMode ? 'none' : 'flex';
     
     if (mode === 'add') {
         sel.innerHTML = `<option value="single">1-Digit</option><option value="double">2-Digits</option><option value="custom" selected>Custom</option>`;
@@ -230,23 +261,46 @@ function setupUI() {
     } else if (mode === 'power') {
         sel.innerHTML = `<option value="sq">Squares</option><option value="cb">Cubes</option><option value="both" selected>Both</option>`;
         document.getElementById('powerControl').style.display = 'inline-block';
+    } else if (mode === 'continue' || mode === 'subtract') {
+        sel.innerHTML = `<option value="1" selected>1 Digit</option><option value="2">2 Digit</option><option value="3">3 Digit</option>`;
     }
 }
 
 function applySettings() {
     const preset = document.getElementById('rangePreset').value;
-    document.getElementById('customControl').style.display = (mode !== 'power' && preset === 'custom') ? 'inline-block' : 'none';
+    document.getElementById('customControl').style.display = (mode !== 'power' && mode !== 'continue' && mode !== 'subtract' && preset === 'custom') ? 'inline-block' : 'none';
     document.getElementById('powerCustomControl').style.display = (mode === 'power') ? 'inline-block' : 'none';
-    saveGameData(); // Remember settings when changed
+    saveGameData();
     initGame();
 }
 
+function generateChainDeck(digits) {
+    let arr = [];
+    let min = digits === 1 ? 1 : Math.pow(10, digits - 1);
+    let max = Math.pow(10, digits) - 1;
+    for (let i = min; i <= max; i++) arr.push(i);
+    return arr.sort(() => Math.random() - 0.5);
+}
+
 function initGame() {
-    deck = []; priority = []; score = 0; qCount = 0; lastAskedQuestions = [];
+    deck = []; score = 0; qCount = 0; lastAskedQuestions = [];
+    currentTotal = 0; turnNumber = 0;
     document.getElementById('score').innerText = '0';
+    document.getElementById('top-line').innerText = '';
+    document.getElementById('bottom-line').innerText = '';
+    
     const preset = document.getElementById('rangePreset').value;
 
-    if (mode === 'add' || mode === 'sub') {
+    if (mode === 'continue' || mode === 'subtract') {
+        let m = parseInt(preset);
+        if (mode === 'continue') {
+            winLimit = [0, 1000, 20000, 200000][m];
+            currentTotal = 0;
+        } else {
+            currentTotal = parseInt(document.getElementById('subStartPreset').value);
+        }
+        deck = generateChainDeck(m);
+    } else if (mode === 'add' || mode === 'sub') {
         let min = parseInt(document.getElementById('minN').value) || 1;
         let max = parseInt(document.getElementById('maxN').value) || 12;
         if (preset === 'single') { min=1; max=9; }
@@ -285,7 +339,7 @@ function initGame() {
             }
         }
     }
-    deck.sort(() => Math.random() - 0.5);
+    if (mode !== 'continue' && mode !== 'subtract') deck.sort(() => Math.random() - 0.5);
     nextQ();
 }
 
@@ -293,9 +347,34 @@ function nextQ() {
     isTransitioning = false;
     const input = document.getElementById('answer');
     input.value = ''; input.disabled = false; input.focus();
+    input.style.color = "white";
+
+    if (mode === 'continue' || mode === 'subtract') {
+        if (deck.length === 0) deck = generateChainDeck(parseInt(document.getElementById('rangePreset').value));
+        
+        if (turnNumber === 0) {
+            currentA = mode === 'subtract' ? currentTotal : deck.pop();
+            document.getElementById('top-line').innerText = "write";
+            document.getElementById('bottom-line').innerText = mode === 'subtract' ? "to start game" : "and start";
+            document.getElementById('qArea').innerHTML = currentA;
+        } else {
+            let nextNum = deck.pop();
+            if (mode === 'subtract' && nextNum >= currentTotal) nextNum = currentTotal;
+            
+            document.getElementById('top-line').innerText = (mode === 'subtract') ? "now subtract" : (turnNumber === 1 ? "add" : "now add");
+            document.getElementById('bottom-line').innerText = (turnNumber === 1) ? (mode === 'subtract' ? "from it" : "to previous") : "";
+            
+            currentA = mode === 'subtract' ? currentTotal - nextNum : currentTotal + nextNum;
+            document.getElementById('qArea').innerHTML = nextNum;
+        }
+        turnNumber++;
+        return;
+    }
+
     qCount++;
     let pickedItem = null;
     let validPriority = priority.filter(p => !lastAskedQuestions.includes(p.q));
+    
     if (validPriority.length > 0 && qCount % 3 === 0) {
         validPriority.sort((a,b) => b.t - a.t);
         pickedItem = validPriority[0];
@@ -307,6 +386,7 @@ function nextQ() {
         priority.sort((a,b) => b.t - a.t);
         pickedItem = priority[0];
     } else { endGame(); return; }
+    
     currentQ = pickedItem.q; currentA = pickedItem.a;
     lastAskedQuestions.push(currentQ);
     if (lastAskedQuestions.length > 4) lastAskedQuestions.shift();
@@ -315,34 +395,70 @@ function nextQ() {
     startTime = Date.now();
 }
 
+function triggerHint() {
+    isHintShowing = true;
+    const inputField = document.getElementById('answer');
+    inputField.value = currentA;
+    inputField.style.color = "#ff4444"; 
+    setTimeout(() => {
+        if(isHintShowing) {
+            inputField.value = ""; 
+            inputField.style.color = "white";
+            inputField.focus();
+            isHintShowing = false;
+        }
+    }, 2000); 
+}
+
 function skipQuestion() {
-    if (isTransitioning) return;
+    if (isTransitioning || mode === 'continue' || mode === 'subtract') return;
     isTransitioning = true;
     document.getElementById('qArea').style.color = "#ff4444";
     document.getElementById('qArea').innerHTML = currentA;
     document.getElementById('answer').disabled = true;
+    
     if (!priority.some(p => p.q === currentQ)) priority.push({q: currentQ, a: currentA, t: 9.9});
+    saveGameData();
     setTimeout(nextQ, 1000); 
 }
 
 document.getElementById('answer').addEventListener('input', (e) => {
     if (isTransitioning || e.target.value === "") return;
+    
+    if (isHintShowing) {
+        e.target.style.color = "white";
+        isHintShowing = false;
+    }
+
     if (parseInt(e.target.value) === currentA) {
+        if (mode === 'continue' || mode === 'subtract') {
+            currentTotal = currentA;
+            if ((mode === 'continue' && currentTotal >= winLimit) || (mode === 'subtract' && currentTotal <= 0)) {
+                endGame();
+            } else {
+                nextQ();
+            }
+            return;
+        }
+
         let time = (Date.now() - startTime) / 1000;
         if (time < fastest) {
             fastest = time;
             document.getElementById('pb').innerText = fastest.toFixed(2) + 's';
             document.getElementById('goal').innerText = (fastest * 1.3).toFixed(2) + 's';
-            saveGameData(); // Remember new Best Time
         }
+        
         let goal = fastest * 1.3;
         let pIdx = priority.findIndex(p => p.q === currentQ);
+        
         if (time > goal && fastest !== Infinity) {
             if (pIdx > -1) priority[pIdx].t = time;
             else priority.push({q: currentQ, a: currentA, t: time});
         } else if (pIdx > -1) {
             priority.splice(pIdx, 1);
         }
+        
+        saveGameData(); // Always save current progress
         score++;
         document.getElementById('score').innerText = score;
         nextQ();
@@ -350,13 +466,29 @@ document.getElementById('answer').addEventListener('input', (e) => {
 });
 
 function endGame() {
-    document.getElementById('finalScore').innerText = score;
-    document.getElementById('finalPB').innerText = fastest === Infinity ? '--' : fastest.toFixed(2) + 's';
+    if (mode === 'continue' || mode === 'subtract') {
+        document.getElementById('statTitle').innerText = "FINISH";
+        document.getElementById('normalStats').style.display = 'none';
+    } else {
+        document.getElementById('statTitle').innerText = "SESSION OVER";
+        document.getElementById('normalStats').style.display = 'block';
+        document.getElementById('finalScore').innerText = score;
+        document.getElementById('finalPB').innerText = fastest === Infinity ? '--' : fastest.toFixed(2) + 's';
+    }
     document.getElementById('statsOverlay').style.display = 'flex';
 }
 
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('button') && !e.target.closest('select') && !e.target.closest('input')) {
+        document.getElementById('answer').focus();
+    }
+});
+
 window.addEventListener('keydown', (e) => { if(e.key.toLowerCase() === 's') skipQuestion(); });
-setInterval(() => { if (startTime && !isTransitioning) document.getElementById('time').innerText = ((Date.now() - startTime) / 1000).toFixed(1); }, 100);
+setInterval(() => { 
+    if (startTime && !isTransitioning && mode !== 'continue' && mode !== 'subtract') 
+        document.getElementById('time').innerText = ((Date.now() - startTime) / 1000).toFixed(1); 
+}, 100);
 </script>
 </body>
 </html>
