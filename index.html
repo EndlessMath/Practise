@@ -102,18 +102,31 @@
     .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
 #sessionTimer {
     position: fixed; 
-    top: 15px;       
-    right: 15px;     
-    font-size: 16px;
-    font-weight: 600;
+    right: 0;           /* Pinned to the wall */
+    top: 50%;           /* Move to vertical center */
+    transform: translateY(-50%); /* Perfect centering offset */
+    
+    width: 35px;        /* Fixed width for the vertical tab */
+    background: #1a1a1a; /* Dark gray to contrast with black background */
     color: #ffffff;
-    z-index: 10000;  /* Higher than your stats overlay */
+    border: 1px solid #ffffff;
+    border-right: none;  /* Remove right border so it "merges" with screen edge */
+    border-radius: 10px 0 0 10px; /* Round only the left corners */
+    
+    padding: 20px 5px;
     font-family: 'Fredoka', sans-serif;
-    background: rgba(40, 40, 40, 0.7); /* Dark semi-transparent box */
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid #444;
-    pointer-events: none; /* Allows you to click things underneath it */
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    z-index: 99999;
+    
+    /* This turns the text vertically to save horizontal space */
+    writing-mode: vertical-rl; 
+    text-orientation: mixed;
+    white-space: nowrap;
+    
+    pointer-events: none; /* Allows you to click "through" it if a button is behind it */
+    box-shadow: -2px 0 10px rgba(0,0,0,0.5);
 }
 </style>
 </head>
@@ -203,13 +216,17 @@ let currentQ, currentA, startTime, fastest = Infinity, score = 0, qCount = 0;
 let isTransitioning = false, isHintShowing = false;
 let lastAskedQuestions = []; 
 function startSessionTimer() {
-    if (sessionInterval) return;
+    // Safety: Always clear any existing timer before starting a new one
+    if (sessionInterval) clearInterval(sessionInterval); 
+    
     sessionInterval = setInterval(() => {
         totalSeconds++;
         const mins = Math.floor(totalSeconds / 60);
         const secs = totalSeconds % 60;
-        document.getElementById('sessionTimer').innerText = 
-            `Session: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        const timerDisplay = document.getElementById('sessionTimer');
+        if (timerDisplay) {
+            timerDisplay.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
     }, 1000);
 }
 
