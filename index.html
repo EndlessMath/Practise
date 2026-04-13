@@ -101,18 +101,19 @@
 
     .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
 #sessionTimer {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        font-size: 16px;
-        font-weight: 600;
-        color: #888;
-        z-index: 3000;
-        font-family: 'Fredoka', sans-serif;
-        background: rgba(0,0,0,0.5);
-        padding: 5px 10px;
-        border-radius: 5px;
-    }
+    position: fixed; /* This "sticks" it to the screen */
+    top: 20px;       /* Distance from the top */
+    right: 20px;     /* Distance from the right */
+    font-size: 16px;
+    font-weight: 600;
+    color: #888;
+    z-index: 9999;   /* This ensures it stays ABOVE all other elements */
+    font-family: 'Fredoka', sans-serif;
+    background: rgba(0,0,0,0.6); /* Slightly darker for better visibility */
+    padding: 8px 12px;
+    border-radius: 8px;
+    pointer-events: none; /* Allows you to click "through" it if it covers a button */
+}
 </style>
 </head>
 <body onload="loadSavedData()">
