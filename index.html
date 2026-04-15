@@ -214,6 +214,7 @@ let sessionInterval;
 let mode = 'add', deck = [], priority = [];
 let currentQ, currentA, startTime, fastest = Infinity, score = 0, qCount = 0;
 let isTransitioning = false, isHintShowing = false;
+let hintUsedForThisQuestion = false; // Add this line
 let lastAskedQuestions = []; 
 function startSessionTimer() {
     // Safety: Always clear any existing timer before starting a new one
@@ -412,6 +413,7 @@ function initGame() {
 
 function nextQ() {
     isTransitioning = false;
+    hintUsedForThisQuestion = false; // Reset the flag for the new question
     const input = document.getElementById('answer');
     input.value = ''; input.disabled = false; input.focus();
     input.style.color = "white";
@@ -423,14 +425,17 @@ function nextQ() {
         if (turnNumber === 0) {
             currentA = mode === 'subtract' ? currentTotal : deck.pop();
             document.getElementById('top-line').innerText = "write";
-            document.getElementById('bottom-line').innerText = mode === 'subtract' ? "to start game" : "and start";
+            document.getElementById('bottom-line').innerText = "to start";
             document.getElementById('qArea').innerHTML = currentA;
         } else {
             let nextNum = deck.pop();
-            if (mode === 'subtract' && nextNum >= currentTotal) nextNum = currentTotal;
+            // Ensure we don't subtract more than we have
+            if (mode === 'subtract' && nextNum >= currentTotal) {
+                nextNum = Math.floor(Math.random() * currentTotal) || 1;
+            }
             
-            document.getElementById('top-line').innerText = (mode === 'subtract') ? "now subtract" : (turnNumber === 1 ? "add" : "now add");
-            document.getElementById('bottom-line').innerText = (turnNumber === 1) ? (mode === 'subtract' ? "from it" : "to previous") : "";
+            document.getElementById('top-line').innerText = (mode === 'subtract') ? "subtract" : "add";
+            document.getElementById('bottom-line').innerText = "";
             
             currentA = mode === 'subtract' ? currentTotal - nextNum : currentTotal + nextNum;
             document.getElementById('qArea').innerHTML = nextNum;
@@ -442,14 +447,24 @@ function nextQ() {
     // --- STANDARD MODES (Add, Sub, Table, Power) ---
     qCount++;
 
-    // 1. REFILL DECK: If deck is empty, re-initialize it to keep the game "Endless"
+    // 1. REFILL DECK: Keep the score, just get more questions
     if (deck.length === 0) {
-        applySettings(); // This regenerates the deck based on current UI settings
+        const currentScore = score; 
+        const currentQCount = qCount; 
+        initGame(); // Re-populates the deck
+        score = currentScore; // Prevents score from resetting to 0
+        qCount = currentQCount;
+        document.getElementById('score').innerText = score;
         return; 
     }
 
     let pickedItem = null;
-    let validPriority = priority.filter(p => !lastAskedQuestions.includes(p.q));
+const currentRange = document.getElementById('rangePreset').value;
+let validPriority = priority.filter(p => 
+    !lastAskedQuestions.includes(p.q) && 
+    p.m === mode && 
+    p.r === currentRange
+);
     
     // 2. SMART SELECTION: Every 3rd question, try to show a "struggle" question
     if (validPriority.length > 0 && qCount % 3 === 0) {
@@ -482,16 +497,15 @@ function nextQ() {
 
 function triggerHint() {
     isHintShowing = true;
+    hintUsedForThisQuestion = true; // Mark that this turn used a hint
     const inputField = document.getElementById('answer');
     inputField.value = currentA;
     inputField.style.color = "#ff4444"; 
     setTimeout(() => {
-        if(isHintShowing) {
-            inputField.value = ""; 
-            inputField.style.color = "white";
-            inputField.focus();
-            isHintShowing = false;
-        }
+        inputField.value = ""; 
+        inputField.style.color = "white";
+        inputField.focus();
+        isHintShowing = false;
     }, 2000); 
 }
 
@@ -502,7 +516,8 @@ function skipQuestion() {
     document.getElementById('qArea').innerHTML = currentA;
     document.getElementById('answer').disabled = true;
     
-    if (!priority.some(p => p.q === currentQ)) priority.push({q: currentQ, a: currentA, t: 9.9});
+    const currentRange = document.getElementById('rangePreset').value;
+if (!priority.some(p => p.q === currentQ)) priority.push({q: currentQ, a: currentA, t: 9.9, m: mode, r: currentRange});
     saveGameData();
     setTimeout(nextQ, 1000); 
 }
@@ -527,7 +542,9 @@ document.getElementById('answer').addEventListener('input', (e) => {
         }
 
         let time = (Date.now() - startTime) / 1000;
-        if (time < fastest) {
+        
+        // Check hintUsedForThisQuestion instead of isHintShowing
+        if (time < fastest && !hintUsedForThisQuestion) {
             fastest = time;
             document.getElementById('pb').innerText = fastest.toFixed(2) + 's';
             document.getElementById('goal').innerText = (fastest * 1.3).toFixed(2) + 's';
@@ -536,10 +553,11 @@ document.getElementById('answer').addEventListener('input', (e) => {
         let goal = fastest * 1.3;
         let pIdx = priority.findIndex(p => p.q === currentQ);
         
-        if (time > goal && fastest !== Infinity) {
-            if (pIdx > -1) priority[pIdx].t = time;
-            else priority.push({q: currentQ, a: currentA, t: time});
-        } else if (pIdx > -1) {
+        const currentRange = document.getElementById('rangePreset').value;
+if (time > goal && fastest !== Infinity) {
+    if (pIdx > -1) priority[pIdx].t = time;
+    else priority.push({q: currentQ, a: currentA, t: time, m: mode, r: currentRange});
+} else if (pIdx > -1) {
             priority.splice(pIdx, 1);
         }
         
