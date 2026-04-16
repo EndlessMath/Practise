@@ -6,14 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
 <style>
     /* Custom Pusab Font */
     @font-face {
         font-family: 'Pusab';
         src: url('https://db.onlinewebfonts.com/t/119a933f7ccb7617fa789210e7b9500c.woff2') format('woff2');
     }
-
     /* --- TOTAL BLACK THEME --- */
     html, body { 
         margin: 0; padding: 0; height: 100%; width: 100%; 
@@ -23,22 +21,22 @@
     }
     
     body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-
     .title-text { font-family: 'Pusab', sans-serif; font-size: 32px; margin-top: 40px; margin-bottom: 5px; color: #ffffff; text-transform: uppercase; text-align: center; }
     .credit-text { font-size: 14px; margin-bottom: 40px; color: #aaaaaa; text-align: center; font-weight: 500; letter-spacing: 1px;}
-
     #hubMenu { margin-top: auto; margin-bottom: auto; text-align: center; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
-
     .menu-btn {
         width: 100%; padding: 20px; background: #000; border: 2px solid #ffffff;
         border-radius: 0; color: white; font-size: 18px; cursor: pointer; text-align: center; transition: 0.2s;
     }
     .menu-btn:hover { background: #ffffff; color: #000; }
-
-    #gameScreen { 
-        display: none; width: 100%; height: 100%; flex-direction: column; 
-        align-items: center; justify-content: center; position: relative; 
-    }
+   #gameScreen { 
+    display: none; width: 100%; height: 100%; flex-direction: column; 
+    align-items: center; justify-content: center; position: relative; 
+    zoom: 0.9; /* Forces the whole section to 90% scale */
+}
+	#gameScreen.power-mode {
+    zoom: 0.85; /* Rescale only for Power mode */
+}
     
     #modeTag { 
         font-size: 16px; margin-bottom: 20px; color: #ffffff; 
@@ -50,7 +48,6 @@
         padding: 8px; font-family: 'Fredoka'; font-size: 16px; color: #ffffff; outline: none;
     }
     #modeTag input[type="number"] { width: 55px; text-align: center; }
-
     .switch { position: relative; display: inline-block; width: 50px; height: 26px; vertical-align: middle; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
@@ -63,11 +60,8 @@
     }
     input:checked + .slider { background-color: #ffffff; }
     input:checked + .slider:before { transform: translateX(22px); background-color: #000; }
-
     .game-box { width: 95%; max-width: 500px; text-align: center; }
-
     .instruction-small { font-size: 16px; opacity: 0.7; min-height: 22px; margin-bottom: 5px; color: #fff; }
-
     .question { 
         font-size: clamp(60px, 20vw, 120px); font-weight: bold; 
         min-height: 150px; display: flex; align-items: center; justify-content: center; 
@@ -80,12 +74,10 @@
         font-size: 50px; width: 220px; background: #000; border: none; border-bottom: 4px solid #ffffff;
         color: #ffffff; text-align: center; outline: none; margin-bottom: 30px; border-radius: 0;
     }
-
     .skip-btn, .hint-btn { background: none; border: 1px solid #444; color: #444; padding: 10px 20px; cursor: pointer; font-family: 'Fredoka'; margin-bottom: 10px; margin-inline: 5px;}
     .skip-btn:hover, .hint-btn:hover { border-color: #fff; color: #fff; }
     
     .finish-game-btn { color: #888; font-size: 12px; cursor: pointer; text-decoration: underline; background: none; border: none; }
-
     .hud { display: flex; justify-content: space-around; margin-top: 40px; font-size: 1.5rem; }
     .target-box { font-size: 14px; margin-top: 20px; border-top: 1px solid #222; padding-top: 20px; display: flex; justify-content: space-between; }
     
@@ -98,11 +90,18 @@
     .stats-card { text-align: center; width: 85%; }
     .stat-row { display: flex; justify-content: space-between; margin: 20px 0; font-size: 24px; border-bottom: 1px solid #333; }
     .end-btn { margin-top: 40px; padding: 15px 40px; background: #fff; color: #000; border: none; font-size: 20px; font-weight: bold; cursor: pointer; }
-
     .flex-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
+@media (max-height: 600px) {
+    .title-text { margin-top: 10px; font-size: 24px; }
+    .question { min-height: 100px; font-size: 80px; }
+    #modeTag { gap: 5px; font-size: 14px; }
+    input#answer { margin-bottom: 10px; }
+.hud { margin-top: 10px; }
+}
 #sessionTimer {
     position: fixed; 
     right: 0;           /* Pinned to the wall */
+	pointer-events: none; /* This ensures the timer doesn't block taps on things behind it */
     top: 50%;           /* Move to vertical center */
     transform: translateY(-50%); /* Perfect centering offset */
     
@@ -128,13 +127,34 @@
     pointer-events: none; /* Allows you to click "through" it if a button is behind it */
     box-shadow: -2px 0 10px rgba(0,0,0,0.5);
 }
+#permanentBubble {
+    background: #ffffff; 
+    color: #000000;      
+    padding: 5px 18px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 20px;
+    border: 2px solid #ffffff;
+    display: inline-block;
+}
+/* This makes the bubble "pop" slightly when the time updates */
+.pop-effect {
+    animation: pop 0.2s ease-out;
+}
+@keyframes pop {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+#mainBox {
+    transform: scale(0.9);
+    transform-origin: top center;
+    margin-top: 10px; /* Gives a little breathing room at the top */
+}
 </style>
 </head>
-
 <body onload="loadSavedData()">
-
 <div id="sessionTimer">Session: 00:00</div>
-
 <div id="hubMenu">
         <div class="title-text">Endless Math</div>
         <div class="credit-text">Designed by Pankaj Mehra</div>
@@ -146,13 +166,14 @@
         <button class="menu-btn" onclick="launch('continue')">ADD & CONTINUE</button>
         <button class="menu-btn" onclick="launch('subtract')">KEEP SUBTRACTING</button>
     </div>
-
     <div id="gameScreen">
         <div class="back-btn" onclick="showHub()">← BACK</div>
-
         <div class="game-box" id="mainBox">
             <div id="modeTag">
                 <div id="rangeControl" class="flex-row">RANGE: <select id="rangePreset" onchange="applySettings()"></select></div>
+<div id="targetControl" class="flex-row">
+    TARGET SPEED: <input type="number" id="manualTarget" step="0.1" min="0.1" onchange="saveManualTarget()">
+</div>
                 <div id="subStartControl" class="flex-row" style="display:none">START: <select id="subStartPreset" onchange="applySettings()">
                     <option value="120">120</option>
                     <option value="1200">1200</option>
@@ -174,18 +195,18 @@
                     </label>
                 </div>
             </div>
-
             <div id="top-line" class="instruction-small"></div>
             <div class="question" id="qArea">--</div>
             <div id="bottom-line" class="instruction-small"></div>
-
-            <input type="tel" inputmode="numeric" id="answer" autofocus placeholder="?">
+<div id="result-slot" style="min-height: 45px; margin: 10px 0; display: flex; justify-content: center; align-items: center;">
+    <div id="permanentBubble" style="visibility: hidden;">--</div>
+</div>
+<input type="tel" inputmode="numeric" id="answer" autofocus placeholder="?">
             <br>
             <button class="skip-btn" id="skipBtn" onclick="skipQuestion()">SKIP (S)</button>
             <button class="hint-btn" id="hintBtn" style="display:none" onclick="triggerHint()">HINT</button>
             <br>
             <button class="finish-game-btn" onclick="endGame()">VIEW STATS</button>
-
             <div class="hud" id="hudArea">
                 <div>SCORE: <span id="score">0</span></div>
                 <div>TIME: <span id="time">0.0</span>s</div>
@@ -196,7 +217,6 @@
             </div>
         </div>
     </div>
-
     <div id="statsOverlay">
         <div class="stats-card">
             <h1 id="statTitle" style="font-size: 40px; margin-bottom: 50px;">SESSION OVER</h1>
@@ -207,15 +227,27 @@
             <button class="end-btn" onclick="location.reload()">RESTART</button>
         </div>
     </div>
-
 <script>
 let totalSeconds = 0;
 let sessionInterval;
 let mode = 'add', deck = [], priority = [];
 let currentQ, currentA, startTime, fastest = Infinity, score = 0, qCount = 0;
+let sessionData = [];
 let isTransitioning = false, isHintShowing = false;
 let hintUsedForThisQuestion = false; // Add this line
 let lastAskedQuestions = []; 
+function showTimeBubble(val) {
+    const b = document.getElementById('permanentBubble');
+    if (b) {
+        b.innerText = val + "s";
+        b.style.visibility = 'visible'; // This makes it stay forever once shown
+        
+        // This makes it "blink" or pop so you know it updated
+        b.classList.remove('pop-effect');
+        void b.offsetWidth; 
+        b.classList.add('pop-effect');
+    }
+}
 function startSessionTimer() {
     // Safety: Always clear any existing timer before starting a new one
     if (sessionInterval) clearInterval(sessionInterval); 
@@ -230,10 +262,8 @@ function startSessionTimer() {
         }
     }, 1000);
 }
-
 // Chain Game variables
 let currentTotal = 0, turnNumber = 0, winLimit = 1000;
-
 const specialSub = [
     {q: "0 - 1", a: 9}, {q: "0 - 2", a: 8}, {q: "0 - 3", a: 7}, {q: "0 - 4", a: 6}, {q: "0 - 5", a: 5}, {q: "0 - 6", a: 4}, {q: "0 - 7", a: 3}, {q: "0 - 8", a: 2}, {q: "0 - 9", a: 1},
     {q: "1 - 2", a: 9}, {q: "1 - 3", a: 8}, {q: "1 - 4", a: 7}, {q: "1 - 5", a: 6}, {q: "1 - 6", a: 5}, {q: "1 - 7", a: 4}, {q: "1 - 8", a: 3}, {q: "1 - 9", a: 2},
@@ -244,9 +274,10 @@ const specialSub = [
     {q: "6 - 7", a: 9}, {q: "6 - 8", a: 8}, {q: "6 - 9", a: 7},
     {q: "7 - 8", a: 9}, {q: "7 - 9", a: 8}, {q: "8 - 9", a: 9}
 ];
-
 function saveGameData() {
     const rangeVal = document.getElementById('rangePreset').value; // Get current dropdown value
+	const isRev = document.getElementById('revToggle') && document.getElementById('revToggle').checked;
+    const gameID = mode + "_" + rangeVal + (isRev ? "_rev" : "");
     const gameData = {
         fastest: fastest,
         priority: priority,
@@ -257,11 +288,14 @@ function saveGameData() {
         revToggle: document.getElementById('revToggle').checked,
         rangePreset: rangeVal // Add this line to save the dropdown choice!
     };
-    localStorage.setItem('endlessMath_Data', JSON.stringify(gameData));
+    localStorage.setItem('endlessMath_Data_' + gameID, JSON.stringify(gameData));
 }
 function loadSavedData() {
     startSessionTimer();
-    const saved = localStorage.getItem('endlessMath_Data');
+    const rangeVal = document.getElementById('rangePreset').value;
+    const isRev = document.getElementById('revToggle') && document.getElementById('revToggle').checked;
+    const gameID = mode + "_" + rangeVal + (isRev ? "_rev" : "");
+    const saved = localStorage.getItem('endlessMath_Data_' + gameID);
     if (saved) {
         const data = JSON.parse(saved);
         fastest = data.fastest || Infinity;
@@ -275,45 +309,59 @@ function loadSavedData() {
         
         if (fastest !== Infinity) {
             document.getElementById('pb').innerText = fastest.toFixed(2) + 's';
-            document.getElementById('goal').innerText = (fastest * 1.3).toFixed(2) + 's';
+            
         }
     }
+updateTargetSpeed();
 }
-
 function launch(newMode) {
     mode = newMode;
+	const screen = document.getElementById('gameScreen');
+    if (mode === 'power') {
+        screen.classList.add('power-mode');
+    } else {
+        screen.classList.remove('power-mode');
+    }
+    
+    // 1. Setup the UI (populates the dropdown)
+    setupUI(); 
+    
+    // 2. Identify the specific key for this mode/range
+    const rangeVal = document.getElementById('rangePreset').value;
+    const storageKey = mode + "_" + rangeVal + "_target";
+    let savedTarget = localStorage.getItem(storageKey);
+    // 3. Ask for speed only if it's the first time
+    if (!savedTarget) {
+        let userInput = prompt("Set Target Speed in seconds (e.g., 3.0).\nQuestions slower than this stay in your practice list.");
+        if (userInput === null || userInput === "" || isNaN(userInput)) {
+            savedTarget = "3.0"; // Default fallback
+        } else {
+            savedTarget = userInput;
+        }
+        localStorage.setItem(storageKey, savedTarget);
+    }
+    // 4. Update the UI displays
     document.getElementById('hubMenu').style.display = 'none';
     document.getElementById('gameScreen').style.display = 'flex';
     
-    // 1. Setup the basic UI options for the mode
-    setupUI();
-    
-    // 2. Try to load the saved preference
-    const saved = localStorage.getItem('endlessMath_Data');
-    if (saved) {
-        const data = JSON.parse(saved);
-        if (data.rangePreset) {
-            const sel = document.getElementById('rangePreset');
-            // Check if the saved option is valid for the current mode's dropdown
-            const exists = Array.from(sel.options).some(opt => opt.value === data.rangePreset);
-            if (exists) {
-                sel.value = data.rangePreset;
-            }
-        }
-    }
-    
-    // 3. Apply settings once to ensure the deck matches the dropdown
+    updateTargetSpeed(); 
+	loadSavedData();
     applySettings();
 }
-
+    
+ 
 function showHub() { location.reload(); }
-
 function setupUI() {
     const sel = document.getElementById('rangePreset');
     sel.innerHTML = '';
-    document.getElementById('powerControl').style.display = 'none';
-    document.getElementById('subStartControl').style.display = (mode === 'subtract') ? 'flex' : 'none';
     
+    // Ensure the main Range and Target speed boxes are ALWAYS visible
+    document.getElementById('rangeControl').style.display = 'flex';
+    document.getElementById('targetControl').style.display = 'flex';
+    
+    // Power and Subtract specific controls
+    document.getElementById('powerControl').style.display = (mode === 'power') ? 'inline-block' : 'none';
+    document.getElementById('subStartControl').style.display = (mode === 'subtract') ? 'flex' : 'none';
     const isChainMode = (mode === 'continue' || mode === 'subtract');
     document.getElementById('skipBtn').style.display = isChainMode ? 'none' : 'inline-block';
     document.getElementById('hintBtn').style.display = isChainMode ? 'inline-block' : 'none';
@@ -328,20 +376,29 @@ function setupUI() {
         sel.innerHTML = `<option value="2-9">2-9</option><option value="custom" selected>Custom</option>`;
     } else if (mode === 'power') {
         sel.innerHTML = `<option value="sq">Squares</option><option value="cb">Cubes</option><option value="both" selected>Both</option>`;
-        document.getElementById('powerControl').style.display = 'inline-block';
     } else if (mode === 'continue' || mode === 'subtract') {
         sel.innerHTML = `<option value="1" selected>1 Digit</option><option value="2">2 Digit</option><option value="3">3 Digit</option>`;
     }
+    // Refresh custom box visibility immediately
+    applySettings();
 }
-
 function applySettings() {
     const preset = document.getElementById('rangePreset').value;
-    document.getElementById('customControl').style.display = (mode !== 'power' && mode !== 'continue' && mode !== 'subtract' && preset === 'custom') ? 'inline-block' : 'none';
+    
+    // Show the "Min to Max" boxes ONLY if 'custom' is selected in the dropdown
+    // and we aren't in special modes where 'custom' isn't an option.
+    const isCustom = (preset === 'custom');
+    const isSpecialMode = (mode === 'power' || mode === 'continue' || mode === 'subtract');
+    
+    document.getElementById('customControl').style.display = (isCustom && !isSpecialMode) ? 'inline-block' : 'none';
+    
+    // Always show Power Custom boxes if in Power mode
     document.getElementById('powerCustomControl').style.display = (mode === 'power') ? 'inline-block' : 'none';
+    
+    updateTargetSpeed(); 
     saveGameData();
     initGame();
 }
-
 function generateChainDeck(digits) {
     let arr = [];
     let min = digits === 1 ? 1 : Math.pow(10, digits - 1);
@@ -349,7 +406,6 @@ function generateChainDeck(digits) {
     for (let i = min; i <= max; i++) arr.push(i);
     return arr.sort(() => Math.random() - 0.5);
 }
-
 function initGame() {
     deck = []; score = 0; qCount = 0; lastAskedQuestions = [];
     currentTotal = 0; turnNumber = 0;
@@ -358,7 +414,6 @@ function initGame() {
     document.getElementById('bottom-line').innerText = '';
     
     const preset = document.getElementById('rangePreset').value;
-
     if (mode === 'continue' || mode === 'subtract') {
         let m = parseInt(preset);
         if (mode === 'continue') {
@@ -410,14 +465,12 @@ function initGame() {
     if (mode !== 'continue' && mode !== 'subtract') deck.sort(() => Math.random() - 0.5);
     nextQ();
 }
-
 function nextQ() {
     isTransitioning = false;
     hintUsedForThisQuestion = false; // Reset the flag for the new question
     const input = document.getElementById('answer');
     input.value = ''; input.disabled = false; input.focus();
     input.style.color = "white";
-
     // --- CHAIN MODES ---
     if (mode === 'continue' || mode === 'subtract') {
         if (deck.length === 0) deck = generateChainDeck(parseInt(document.getElementById('rangePreset').value));
@@ -443,10 +496,8 @@ function nextQ() {
         turnNumber++;
         return;
     }
-
     // --- STANDARD MODES (Add, Sub, Table, Power) ---
     qCount++;
-
     // 1. REFILL DECK: Keep the score, just get more questions
     if (deck.length === 0) {
         const currentScore = score; 
@@ -457,7 +508,6 @@ function nextQ() {
         document.getElementById('score').innerText = score;
         return; 
     }
-
     let pickedItem = null;
 const currentRange = document.getElementById('rangePreset').value;
 let validPriority = priority.filter(p => 
@@ -483,18 +533,21 @@ let validPriority = priority.filter(p =>
     // Safety check if pickedItem is still null
     if (!pickedItem) { endGame(); return; }
     
-    currentQ = pickedItem.q; 
+    currentQ = pickedItem.q;
+    window.displayQ = currentQ; 
+    if (typeof currentQ === 'string' && currentQ.includes('<span')) {
+        let tempDiv = document.createElement("div");
+        tempDiv.innerHTML = currentQ;
+        window.displayQ = tempDiv.querySelector('span').innerText + " (Root)";
+    }
     currentA = pickedItem.a;
-
     // Track history to avoid immediate repeats
     lastAskedQuestions.push(currentQ);
     if (lastAskedQuestions.length > 5) lastAskedQuestions.shift();
-
     document.getElementById('qArea').innerHTML = currentQ;
     document.getElementById('qArea').style.color = "#ffffff";
     startTime = Date.now();
 }
-
 function triggerHint() {
     isHintShowing = true;
     hintUsedForThisQuestion = true; // Mark that this turn used a hint
@@ -508,7 +561,6 @@ function triggerHint() {
         isHintShowing = false;
     }, 2000); 
 }
-
 function skipQuestion() {
     if (isTransitioning || mode === 'continue' || mode === 'subtract') return;
     isTransitioning = true;
@@ -521,7 +573,6 @@ if (!priority.some(p => p.q === currentQ)) priority.push({q: currentQ, a: curren
     saveGameData();
     setTimeout(nextQ, 1000); 
 }
-
 document.getElementById('answer').addEventListener('input', (e) => {
     if (isTransitioning || e.target.value === "") return;
     
@@ -529,7 +580,6 @@ document.getElementById('answer').addEventListener('input', (e) => {
         e.target.style.color = "white";
         isHintShowing = false;
     }
-
     if (parseInt(e.target.value) === currentA) {
         if (mode === 'continue' || mode === 'subtract') {
             currentTotal = currentA;
@@ -540,58 +590,126 @@ document.getElementById('answer').addEventListener('input', (e) => {
             }
             return;
         }
-
         let time = (Date.now() - startTime) / 1000;
-        
-        // Check hintUsedForThisQuestion instead of isHintShowing
+        showTimeBubble(time.toFixed(2));
+		sessionData.push({q: window.displayQ, t: time});
         if (time < fastest && !hintUsedForThisQuestion) {
             fastest = time;
             document.getElementById('pb').innerText = fastest.toFixed(2) + 's';
-            document.getElementById('goal').innerText = (fastest * 1.3).toFixed(2) + 's';
         }
         
-        let goal = fastest * 1.3;
+        const manualTarget = parseFloat(document.getElementById('manualTarget').value);
         let pIdx = priority.findIndex(p => p.q === currentQ);
-        
         const currentRange = document.getElementById('rangePreset').value;
-if (time > goal && fastest !== Infinity) {
-    if (pIdx > -1) priority[pIdx].t = time;
-    else priority.push({q: currentQ, a: currentA, t: time, m: mode, r: currentRange});
-} else if (pIdx > -1) {
-            priority.splice(pIdx, 1);
+        if (time > manualTarget) {
+            if (pIdx > -1) priority[pIdx].t = time;
+            else priority.push({q: currentQ, a: currentA, t: time, m: mode, r: currentRange});
+        } else {
+            if (pIdx > -1) priority.splice(pIdx, 1);
         }
         
-        saveGameData(); // Always save current progress
+        saveGameData(); 
         score++;
         document.getElementById('score').innerText = score;
         nextQ();
     }
 });
-
 function endGame() {
-    if (mode === 'continue' || mode === 'subtract') {
-        document.getElementById('statTitle').innerText = "FINISH";
-        document.getElementById('normalStats').style.display = 'none';
-    } else {
-        document.getElementById('statTitle').innerText = "SESSION OVER";
-        document.getElementById('normalStats').style.display = 'block';
-        document.getElementById('finalScore').innerText = score;
-        document.getElementById('finalPB').innerText = fastest === Infinity ? '--' : fastest.toFixed(2) + 's';
-    }
-    document.getElementById('statsOverlay').style.display = 'flex';
-}
+    const isRev = document.getElementById('revToggle') && document.getElementById('revToggle').checked;
+    const gameID = mode + "_" + document.getElementById('rangePreset').value + (isRev ? "_rev" : "");
+    let history = JSON.parse(localStorage.getItem('history_' + gameID) || "[]");
+    history.unshift(sessionData);
+    if (history.length > 5) history.pop();
+    localStorage.setItem('history_' + gameID, JSON.stringify(history));
 
+    document.getElementById('statsOverlay').innerHTML = `
+        <div style="width:90%; color:white; text-align:center;">
+            <h2 style="font-family:'Pusab'; font-size:24px;">STATS</h2>
+            <div style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;">
+                <button onclick="renderTable('weak')" style="background:#000; color:white; border:1px solid white; padding:8px 5px; flex:1; font-size:11px;">WEAKEST</button>
+                <button onclick="renderTable('history')" style="background:#000; color:white; border:1px solid white; padding:8px 5px; flex:1; font-size:11px;">PROGRESS</button>
+                <button onclick="renderTable('all')" style="background:#000; color:white; border:1px solid white; padding:8px 5px; flex:1; font-size:11px;">ALL</button>
+            </div>
+            <div id="statsTableContainer" style="max-height:300px; overflow-y:auto; margin-bottom:20px;"></div>
+            <button class="end-btn" onclick="location.reload()" style="width:100%;">RESTART</button>
+            <br>
+            <button onclick="document.getElementById('statsOverlay').style.display='none'" style="color:#888; background:none; border:none; text-decoration:underline; margin-top:15px;">← BACK</button>
+        </div>`;
+    document.getElementById('statsOverlay').style.display = 'flex';
+    renderTable('all');
+}
 document.addEventListener('click', (e) => {
     if (!e.target.closest('button') && !e.target.closest('select') && !e.target.closest('input')) {
         document.getElementById('answer').focus();
     }
 });
-
 window.addEventListener('keydown', (e) => { if(e.key.toLowerCase() === 's') skipQuestion(); });
 setInterval(() => { 
     if (startTime && !isTransitioning && mode !== 'continue' && mode !== 'subtract') 
         document.getElementById('time').innerText = ((Date.now() - startTime) / 1000).toFixed(1); 
 }, 100);
+// Updates the UI (Input box and Goal text) from saved data
+function updateTargetSpeed() {
+    const rangeVal = document.getElementById('rangePreset').value;
+    const storageKey = mode + "_" + rangeVal + "_target";
+    const input = document.getElementById('manualTarget');
+    if (!input) return;
+    const currentVal = localStorage.getItem(storageKey) || "3.0";
+    input.value = currentVal;
+    
+    const goalDisplay = document.getElementById('goal');
+    if (goalDisplay) goalDisplay.innerText = currentVal + 's';
+}
+// Saves the new speed when you type it manually in the game box
+function saveManualTarget() {
+    const rangeVal = document.getElementById('rangePreset').value;
+    const storageKey = mode + "_" + rangeVal + "_target";
+    const input = document.getElementById('manualTarget');
+    
+    if (input && input.value !== "" && !isNaN(input.value)) {
+        localStorage.setItem(storageKey, input.value);
+        // Update the 'GOAL' text immediately
+        const goalDisplay = document.getElementById('goal');
+        if (goalDisplay) goalDisplay.innerText = input.value + 's';
+        console.log("Saved new target speed:", input.value);
+    }
+}
+// ... (all your existing code is up here)
+
+function fmtT(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+}
+
+function renderTable(type) {
+    const isRev = document.getElementById('revToggle') && document.getElementById('revToggle').checked;
+    const gameID = mode + "_" + document.getElementById('rangePreset').value + (isRev ? "_rev" : "");
+    const history = JSON.parse(localStorage.getItem('history_' + gameID) || "[]");
+    const prevSessions = history.slice(1);
+    let displayData = [...sessionData].sort((a, b) => b.t - a.t);
+    let html = `<table style="width:100%; font-size:14px; color:white; border-collapse:collapse;">`;
+
+    if (type === 'weak') {
+        displayData = displayData.filter(x => x.t > 2.0).slice(0, 10);
+        html += `<tr><th>Q</th><th>Time</th></tr>`;
+        displayData.forEach(r => html += `<tr style="border-bottom:1px solid #222;"><td>${r.q}</td><td>${fmtT(r.t)}</td></tr>`);
+    } else if (type === 'history') {
+        displayData = displayData.filter(x => x.t > 2.0).slice(0, 10);
+        html += `<tr><th>Q</th><th>Now</th><th>Best</th><th>%</th></tr>`;
+        displayData.forEach(r => {
+            let histTimes = prevSessions.flatMap(s => s.filter(i => i.q === r.q).map(i => i.t));
+            let bPrev = histTimes.length ? Math.min(...histTimes) : r.t;
+            let prg = (((bPrev - r.t) / bPrev) * 100).toFixed(0);
+            html += `<tr style="border-bottom:1px solid #222;"><td>${r.q}</td><td>${r.t.toFixed(1)}s</td><td>${bPrev.toFixed(1)}s</td><td>${prg}%</td></tr>`;
+        });
+    } else {
+        html += `<tr><th>Q</th><th>Time</th></tr>`;
+        displayData.slice(0, 10).forEach(r => html += `<tr style="border-bottom:1px solid #222;"><td>${r.q}</td><td>${fmtT(r.t)}</td></tr>`);
+    }
+    document.getElementById('statsTableContainer').innerHTML = html + `</table>`;
+}
+
 </script>
 </body>
 </html>
